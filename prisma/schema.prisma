@@ -1,0 +1,157 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+model TpTable {
+  TpNumber   String @unique(map: "UQ__TpTable__1A91EEDC2A83ED2F") @db.VarChar(20)
+  BornYear   Int
+  CourseName String @db.VarChar(100)
+}
+
+model Users {
+  Id                                          String                   @id(map: "PK__Users__3214EC079D1AB0AC") @default(dbgenerated("newid()"), map: "DF__Users__Id__59063A47") @db.UniqueIdentifier
+  Username                                    String                   @db.VarChar(100)
+  TPNumber                                    String                   @unique(map: "UQ__Users__5529208BEAA0D9F8") @db.VarChar(20)
+  Email                                       String                   @unique(map: "UQ__Users__A9D10534154C7AD1") @db.VarChar(255)
+  Password                                    String                   @db.VarChar(255)
+  CreatedAt                                   DateTime?                @default(now(), map: "DF__Users__CreatedAt__59FA5E80") @db.DateTime
+  Comments                                    Comments[]
+  DailyMood                                   DailyMood[]
+  Friendships_Friendships_addressee_idToUsers Friendships[]            @relation("Friendships_addressee_idToUsers")
+  Friendships_Friendships_requester_idToUsers Friendships[]            @relation("Friendships_requester_idToUsers")
+  Likes                                       Likes[]
+  MentalHealthAssignment                      MentalHealthAssignment[]
+  Notifications                               Notifications[]
+  Posts                                       Posts[]
+  ProfileInterestTags                         ProfileInterestTags[]
+  Profiles                                    Profiles?
+}
+
+model Profiles {
+  Id                 String  @id(map: "PK__Profiles__3214EC07B7B003EB") @default(dbgenerated("newid()"), map: "DF__Profiles__Id__778AC167") @db.UniqueIdentifier
+  UserId             String  @unique(map: "UQ__Profiles__1788CC4DD3ABA7F8") @db.UniqueIdentifier
+  ProfileImageUrl    String? @db.VarChar(500)
+  BackgroundImageUrl String? @db.VarChar(500)
+  Age                Int?
+  Bio                String? @db.NVarChar(500)
+  CourseName         String? @db.VarChar(100)
+  Users              Users   @relation(fields: [UserId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK__Profiles__UserId__628FA481")
+}
+
+model Friendships {
+  id                                    String    @id(map: "PK__Friendsh__3213E83FD8C1762C") @default(dbgenerated("newid()"), map: "DF__Friendships__id__03F0984C") @db.UniqueIdentifier
+  requester_id                          String    @db.UniqueIdentifier
+  addressee_id                          String    @db.UniqueIdentifier
+  status                                String    @db.VarChar(20)
+  CreatedAt                             DateTime? @default(now(), map: "DF__Friendshi__Creat__05D8E0BE") @db.DateTime
+  Users_Friendships_addressee_idToUsers Users     @relation("Friendships_addressee_idToUsers", fields: [addressee_id], references: [Id], onUpdate: NoAction, map: "fk_addressee")
+  Users_Friendships_requester_idToUsers Users     @relation("Friendships_requester_idToUsers", fields: [requester_id], references: [Id], onUpdate: NoAction, map: "fk_requester")
+
+  @@unique([requester_id, addressee_id], map: "unique_friendship")
+}
+
+model Notifications {
+  id        String    @id(map: "PK__Notifica__3213E83FDAEEE2E1") @default(dbgenerated("newid()"), map: "DF__Notification__id__2180FB33") @db.UniqueIdentifier
+  userId    String    @db.UniqueIdentifier
+  message   String?   @db.NVarChar(Max)
+  isRead    Boolean?  @default(false, map: "DF__Notificat__isRea__22751F6C")
+  buttonURL String?   @db.NVarChar(Max)
+  createdAt DateTime? @default(now(), map: "DF__Notificat__creat__236943A5") @db.DateTime
+  Users     Users     @relation(fields: [userId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK__Notificat__creat__245D67DE")
+}
+
+model InterestTags {
+  Id                  String                @id(map: "PK__Interest__3214EC077E0AEA66") @default(dbgenerated("newid()"), map: "DF__InterestTags__Id__282DF8C2") @db.UniqueIdentifier
+  Name                String                @unique(map: "UQ__Interest__737584F6162A70E2") @db.VarChar(100)
+  PostTags            PostTags[]
+  ProfileInterestTags ProfileInterestTags[]
+}
+
+model ProfileInterestTags {
+  UserId       String       @db.UniqueIdentifier
+  TagId        String       @db.UniqueIdentifier
+  InterestTags InterestTags @relation(fields: [TagId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK__ProfileIn__TagId__2BFE89A6")
+  Users        Users        @relation(fields: [UserId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK__ProfileIn__UserI__2B0A656D")
+
+  @@id([UserId, TagId], map: "PK__ProfileI__C1DF03D6A5466DFE")
+}
+
+model Comments {
+  Id        String    @id(map: "PK__Comments__3214EC07496C9314") @default(dbgenerated("newid()"), map: "DF__Comments__Id__40058253") @db.UniqueIdentifier
+  PostId    String    @db.UniqueIdentifier
+  UserId    String    @db.UniqueIdentifier
+  Content   String    @db.NVarChar(Max)
+  createdAt DateTime? @default(now(), map: "DF__Comments__create__40F9A68C") @db.DateTime
+  Posts     Posts     @relation(fields: [PostId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_Comments_Posts")
+  Users     Users     @relation(fields: [UserId], references: [Id], onUpdate: NoAction, map: "FK_Comments_Users")
+}
+
+model Likes {
+  Id     String @id(map: "PK__Likes__3214EC07C86EB124") @default(dbgenerated("newid()"), map: "DF__Likes__Id__3B40CD36") @db.UniqueIdentifier
+  PostId String @db.UniqueIdentifier
+  UserId String @db.UniqueIdentifier
+  Posts  Posts  @relation(fields: [PostId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_Likes_Posts")
+  Users  Users  @relation(fields: [UserId], references: [Id], onUpdate: NoAction, map: "FK_Likes_Users")
+
+  @@unique([PostId, UserId], map: "UQ_Likes_Post_User")
+}
+
+model PostMedia {
+  Id     String @id(map: "PK__PostMedi__3214EC07804CE99F") @default(dbgenerated("newid()"), map: "DF__PostMedia__Id__3587F3E0") @db.UniqueIdentifier
+  PostId String @db.UniqueIdentifier
+  Url    String @db.NVarChar(500)
+  Type   String @db.VarChar(10)
+  Posts  Posts  @relation(fields: [PostId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_PostMedia_Posts")
+}
+
+model Posts {
+  Id        String      @id(map: "PK__Posts__3214EC078C517D34") @default(dbgenerated("newid()"), map: "DF__Posts__Id__30C33EC3") @db.UniqueIdentifier
+  UserId    String      @db.UniqueIdentifier
+  Content   String      @db.NVarChar(Max)
+  createdAt DateTime?   @default(now(), map: "DF__Posts__createdAt__31B762FC") @db.DateTime
+  Comments  Comments[]
+  Likes     Likes[]
+  PostMedia PostMedia[]
+  Users     Users       @relation(fields: [UserId], references: [Id], onUpdate: NoAction, map: "FK_Posts_Users")
+  PostTags  PostTags[]
+}
+
+model PostTags {
+  PostId        String       @db.UniqueIdentifier
+  InterestTagId String       @db.UniqueIdentifier
+  InterestTags  InterestTags @relation(fields: [InterestTagId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_PostTags_InterestTag")
+  Posts         Posts        @relation(fields: [PostId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_PostTags_Post")
+
+  @@id([PostId, InterestTagId], map: "PK_PostTags")
+}
+
+model MentalHealthAssignment {
+  Id                    String                @id(map: "PK__MentalHe__3214EC07FC005257") @default(dbgenerated("newid()"), map: "DF__MentalHealth__Id__6AEFE058") @db.UniqueIdentifier
+  UserId                String                @db.UniqueIdentifier
+  QuestionId            String                @db.VarChar(10)
+  IsAnswered            Boolean?              @default(false, map: "DF__MentalHea__IsAns__6BE40491")
+  AnswerText            String?               @db.Text
+  Score                 Int?
+  CreatedAt             DateTime              @default(now(), map: "DF__MentalHea__Creat__6CD828CA") @db.DateTime
+  MentalHealthQuestions MentalHealthQuestions @relation(fields: [QuestionId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_MHA_Question")
+  Users                 Users                 @relation(fields: [UserId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_MHA_User")
+}
+
+model MentalHealthQuestions {
+  Id                     String                   @id(map: "PK__MentalHe__3214EC071F9D0FCD") @db.VarChar(10)
+  QuestionText           String                   @db.Text
+  MentalHealthAssignment MentalHealthAssignment[]
+}
+
+model DailyMood {
+  id     String   @id(map: "PK__DailyMoo__3213E83FD7D28154") @default(dbgenerated("newid()"), map: "DF__DailyMood__id__7849DB76") @db.UniqueIdentifier
+  userId String   @db.UniqueIdentifier
+  mood   Int
+  date   DateTime @default(now(), map: "DF__DailyMood__date__7A3223E8")
+  Users  Users    @relation(fields: [userId], references: [Id], onUpdate: NoAction, map: "FK_DailyMood_Users")
+}
