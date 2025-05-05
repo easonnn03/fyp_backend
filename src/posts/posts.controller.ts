@@ -100,9 +100,13 @@ export class PostsController {
 
   @Post('comment')
   commentPost(
-    @Body() dto: { postId: string; userId: string; content: string },
+    @Body() dto: { postId: string; currentUserId: string; content: string },
   ) {
-    return this.postsService.commentPost(dto.postId, dto.userId, dto.content);
+    return this.postsService.commentPost(
+      dto.postId,
+      dto.currentUserId,
+      dto.content,
+    );
   }
 
   @Get(':postId/comments')
